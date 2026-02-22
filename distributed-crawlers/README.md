@@ -4,72 +4,71 @@
 This repository details the architecture for a highly scalable, distributed data ingestion pipeline deployed entirely within a secure AWS VPC. The system is designed to independently discover, rate-limit, and extract unstructured data from highly variable external web architectures, standardize the payloads, and route them for both real-time search and historical state tracking.
 
 ```mermaid
-graph TD
-    subgraph Public Internet
-        T1[Target Architecture Type A]
-        T2[Target Architecture Type B]
-        T3[Custom Enterprise Targets]
+flowchart TD
+    %% Color Theme Definitions
+    classDef web fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000
+    classDef compute fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#000
+    classDef queue fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef db fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef sec fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+
+    WEB((Public Web / Target Domains)):::web
+
+    subgraph VPC [AWS Virtual Private Cloud - Private Subnets]
+        
+        subgraph SecLayer [Security Layer]
+            BASTION[EC2 Bastion Host<br/>mTLS / SSH Tunnel]:::sec
+        end
+
+        subgraph L1 [Layer 1: Discovery]
+            DISC[Discovery Microservice<br/>Parses Sitemaps & robots.txt]:::compute
+        end
+
+        subgraph L2 [Layer 2: Ingestion Broker]
+            IQ[(Input Queue<br/>URL Dispatch)]:::queue
+        end
+
+        subgraph L3 [Layer 3: Extraction Cluster]
+            W1[Scrapy Worker Node A]:::compute
+            W2[Scrapy Worker Node B]:::compute
+            W3[Scrapy Worker Node N]:::compute
+        end
+
+        subgraph L4 [Layer 4: Output Broker]
+            OQ[(Output Queue<br/>Standardized JSON)]:::queue
+        end
+
+        subgraph L5 [Layer 5: Data Persistence]
+            OS[(AWS OpenSearch<br/>Real-Time Search)]:::db
+            MONGO[(MongoDB Sharded Cluster<br/>Temporal State Tracking)]:::db
+        end
     end
 
-    subgraph AWS VPC [AWS Virtual Private Cloud - Private Subnets]
-        direction TB
-        
-        BASTION[EC2 Bastion Host<br/>Secure Admin Tunneling]
-        
-        subgraph Discovery Layer
-            DISC[Discovery Microservice<br/>Parses Sitemaps & robots.txt]
-        end
+    %% Data Flow Sequence
+    WEB -->|1. Fetch Sitemaps| DISC
+    DISC -->|2. Enqueue Target URLs| IQ
+    
+    IQ -->|3. Consume Tasks| W1
+    IQ -->|3. Consume Tasks| W2
+    IQ -->|3. Consume Tasks| W3
 
-        subgraph Queueing & Decoupling Layer
-            IQ[(Input Queue<br/>URL Dispatch)]
-            OQ[(Output Queue<br/>Standardized Payloads)]
-        end
+    WEB -.->|4. Extract Raw Data| W1
+    WEB -.->|4. Extract Raw Data| W2
+    WEB -.->|4. Extract Raw Data| W3
 
-        subgraph Distributed Crawler Cluster
-            C1[Scrapy Worker Node A<br/>Rate-Limited]
-            C2[Scrapy Worker Node B<br/>Rate-Limited]
-            C3[Custom Scrapy Node<br/>Rate-Limited]
-        end
+    W1 -->|5. Publish Standardized Payload| OQ
+    W2 -->|5. Publish Standardized Payload| OQ
+    W3 -->|5. Publish Standardized Payload| OQ
 
-        subgraph Data Storage & Search
-            OS[(AWS OpenSearch<br/>Real-Time Index)]
-            
-            subgraph Sharded Database Cluster
-                MONGO[(MongoDB Sharded Cluster<br/>Historical State Tracking)]
-                CERT[mTLS / Self-Signed Certs<br/>App-Specific Authentication]
-                MONGO --- CERT
-            end
-        end
-    end
+    OQ -->|6. Sync Search Index| OS
+    OQ -->|6. Append Historical Data| MONGO
 
-    %% The Flow
-    DISC -->|Crawls site structures| T1
-    DISC -->|Crawls site structures| T2
-    DISC -->|Crawls site structures| T3
-    
-    DISC -->|Publishes Target URLs| IQ
-    
-    IQ -->|Consumes URLs| C1
-    IQ -->|Consumes URLs| C2
-    IQ -->|Consumes URLs| C3
-    
-    C1 -->|Ingests & Standardizes Data| T1
-    C2 -->|Ingests & Standardizes Data| T2
-    C3 -->|Ingests & Standardizes Data| T3
-    
-    C1 -->|Publishes Extracted Payloads| OQ
-    C2 -->|Publishes Extracted Payloads| OQ
-    C3 -->|Publishes Extracted Payloads| OQ
-    
-    OQ -->|Syncs Search Index| OS
-    OQ -->|Appends Change History| MONGO
-    
-    %% Security & Infrastructure Rules
-    BASTION -.->|Encrypted SSH Access| DISC
-    BASTION -.->|Encrypted SSH Access| MONGO
-    
-    classDef vpc fill:#f9f2ec,stroke:#d28e5d,stroke-width:2px;
-    classDef internet fill:#
+    %% Security Routing
+    BASTION -.->|Secure Admin| MONGO
+    BASTION -.->|Secure Admin| DISC
+
+    %% Layout Enforcement
+    BASTION ~~~ DISC
 ```
 ### Key Engineering Decisions & Trade-offs
 
