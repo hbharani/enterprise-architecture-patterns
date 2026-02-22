@@ -4,10 +4,10 @@ Welcome to a curated collection of **production-grade enterprise architecture pa
 
 ## 📚 Table of Contents
 
-1. [Distributed Data Ingestion](#distributed-data-ingestion)
-2. [Content Discovery & Personalization](#content-discovery--personalization)
-3. [Legacy Monolith to Microservices (Coming Soon)](#legacy-monolith-to-microservices)
-4. [Enterprise Agentic AI Pipelines (Coming Soon)](#enterprise-agentic-ai-pipelines)
+1. [Distributed Data Ingestion](#1-distributed-data-ingestion)
+2. [Content Discovery & Personalization](#2-content-discovery--personalization)
+3. [Legacy Monolith to Microservices](#3-legacy-monolith-to-microservices)
+4. [Secure Local AI Modernization](#4-secure-local-ai-modernization)
 5. [Architecture Principles](#architecture-principles)
 
 ---
@@ -78,15 +78,88 @@ flowchart LR
 
 ---
 
-### 3. Legacy Monolith to Microservices (In Progress)
+### 3. Legacy Monolith to Microservices
 
 **Use Case:** Refactoring a legacy computational monolith into a highly scalable, event-driven microservices architecture on AWS. Details parallel compute orchestration, API-first design, and cloud cost-optimization.
 
+[→ Explore Pattern →](./legacy-monolith-to-microservices/README.md)
+
+```mermaid
+flowchart LR
+    UI1[Setup UI]
+    UI2[Canvas UI]
+    UI3[Analytics UI]
+    GW[API Gateway]
+    SVC1[Job Mgmt Service]
+    SVC2[Render Service]
+    SVC3[Aggregation Service]
+    PULSAR[Apache Pulsar]
+    L1[Lambda Worker]
+    L2[Lambda Worker]
+    
+    UI1 --> GW
+    UI2 --> GW
+    UI3 --> GW
+    GW --> SVC1 & SVC2 & SVC3
+    SVC1 -->|Publish| PULSAR
+    PULSAR -->|Stream| L1 & L2
+    L1 & L2 -->|Results| PULSAR
+    PULSAR -->|Consume| SVC3
+    
+    style SVC1 fill:#ede7f6
+    style SVC2 fill:#ede7f6
+    style SVC3 fill:#ede7f6
+    style PULSAR fill:#e0f7fa
+    style L1 fill:#fce4ec
+    style L2 fill:#fce4ec
+    style GW fill:#fff3e0
+    style UI1 fill:#fff9c4
+    style UI2 fill:#fff9c4
+    style UI3 fill:#fff9c4
+```
+
 ---
 
-### 4. Enterprise Agentic AI Pipelines (In Progress)
+### 4. Secure Local AI Modernization
 
-**Use Case:** Deploying custom machine learning models, secure prompt engineering workflows, and multi-modal LLMs for extracting intelligence from unstructured enterprise telemetry.
+**Use Case:** Modernizing legacy desktop engineering applications into secure, multi-tenant Python web platforms with air-gapped, local GenAI pipelines for multi-modal analysis without exposing proprietary IP to public cloud APIs.
+
+[→ Explore Pattern →](./secure-local-ai-modernization/README.md)
+
+```mermaid
+flowchart LR
+    USER[End User]
+    UI[Web UI]
+    API[API Gateway]
+    AUTH[Auth Service]
+    MATH[Math Service]
+    VIZ[Visualization]
+    QUEUE[Task Queue]
+    WORKER[Background Worker]
+    STATS[Context Aggregator]
+    OLLAMA[Ollama LLM]
+    
+    USER -->|Access| UI
+    UI --> API
+    API --> AUTH & MATH & VIZ
+    MATH -->|Enqueue| QUEUE
+    QUEUE -->|Consume| WORKER
+    WORKER -->|Results| VIZ
+    VIZ -->|Charts| STATS
+    STATS -->|Prompt| OLLAMA
+    OLLAMA -->|Analysis| UI
+    
+    style AUTH fill:#ede7f6
+    style MATH fill:#ede7f6
+    style VIZ fill:#ede7f6
+    style QUEUE fill:#e0f7fa
+    style WORKER fill:#fce4ec
+    style STATS fill:#e8f5e9
+    style OLLAMA fill:#e8f5e9
+    style API fill:#fff3e0
+    style UI fill:#fff9c4
+    style USER fill:#e1f5fe
+```
 
 ---
 
